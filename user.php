@@ -51,8 +51,6 @@ class acf_field_user extends acf_Field
 
     function acf_get_user_results()
     {
-        error_log("AJAX call: " . print_r($_POST, true));
-
         global $wpdb;
 
         // vars
@@ -61,7 +59,6 @@ class acf_field_user extends acf_Field
             'paged'        => 0,
             'orderby'      => 'login',
             'order'        => 'ASC',
-            'search'       => '',
             'number'       => '15',
             'count_total'  => false,
             's'            => '',
@@ -73,11 +70,6 @@ class acf_field_user extends acf_Field
 
         $options = array_merge($options, $_POST);
 
-        // validate
-        /* if( !wp_verify_nonce($options['nonce'], 'acf_nonce') )
-        {
-            die(0);
-        } */
 
         if( $options['paged'] ) {
             $options['offset']  = ($options['paged'] - 1) * $options['number'];
@@ -91,22 +83,13 @@ class acf_field_user extends acf_Field
             $sitepress->switch_lang( $options['lang'] );
         }
 
-
         // convert types
         $options['roles'] = explode(',', $options['roles']);
-
 
         // load all users types by default
         if( !$options['roles'] || !is_array($options['roles']) || $options['roles'][0] == "" )
         {
-            $options['roles'] = '';
-        }
-
-
-        // attachment doesn't work if it is the only item in an array???
-        if( is_array($options['roles']) && count($options['roles']) == 1 )
-        {
-            $options['roles'] = $options['roles'][0];
+            $options['roles'] = array('');
         }
 
 
@@ -133,25 +116,28 @@ class acf_field_user extends acf_Field
 
         if( ! $results )
         {
-            error_log("loading the users");
-            // load the users
-            $users = get_users( $options );
+            // load the users for each role
+            $users = array();
+            foreach ($options['roles'] as $role) {
+                $options['role'] = $role;
+                $users = array_merge($users, get_users( $options ));
+            }
 
-            if ( !isset( $wp_roles ) )
-                $wp_roles = new WP_Roles();
+            /* if ( !isset( $wp_roles ) )
+                $wp_roles = new WP_Roles(); */
 
             if( $users )
             {
                 foreach( $users  as $user )
                 {
                     // get role
-                    $user_role = '';
+                    /* $user_role = '';
                     $capabilities = $user->{$wpdb->prefix . 'capabilities'};
 
                     foreach ( $wp_roles->role_names as $role => $name ) {
                         if ( array_key_exists( $role, $capabilities ) )
                             $user_role = $role;
-                    }
+                    } */
 
                     // right aligned info
                     $title = '<span class="user-item-info">';
@@ -300,8 +286,6 @@ class acf_field_user extends acf_Field
 	
 	function create_field($field)
 	{
-        error_log("field array: " . print_r($field, true));
-
         // vars
         $defaults = array(
             'roles'     =>  '',
@@ -321,14 +305,13 @@ class acf_field_user extends acf_Field
         } 
 
         // load all roles by default
-        error_log("roles 1 are " . print_r($field['roles'], true));
+        //error_log("roles 1 are " . print_r($field['roles'], true));
         if( !$field['roles'] || !is_array($field['roles']) || $field['roles'][0] == "" )
         {
             // $field['roles'] = $this->get_roles();
-            error_log("blanking roles.. ");
             $field['roles'] = array('');
         }
-        error_log("roles 2 are " . print_r($field['roles'], true));
+        //error_log("roles 2 are " . print_r($field['roles'], true));
 
         ?>
 <div class="acf_user" data-max="<?php echo $field['max']; ?>" data-s="" data-paged="1" data-roles="<?php echo implode(',', $field['roles']); ?>" <?php if( defined('ICL_LANGUAGE_CODE') ){ echo 'data-lang="' . ICL_LANGUAGE_CODE . '"';} ?>>
@@ -376,9 +359,7 @@ class acf_field_user extends acf_Field
         {
             foreach( $field['value'] as $userid )
             {
-
                 $user = get_userdata( $userid );
-                error_log("user:" . print_r($user, true));
 
                 // check that user exists (my have been trashed)
                 if( !is_object($user) )
