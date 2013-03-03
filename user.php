@@ -123,22 +123,10 @@ class acf_field_user extends acf_Field
                 $users = array_merge($users, get_users( $options ));
             }
 
-            /* if ( !isset( $wp_roles ) )
-                $wp_roles = new WP_Roles(); */
-
             if( $users )
             {
                 foreach( $users  as $user )
                 {
-                    // get role
-                    /* $user_role = '';
-                    $capabilities = $user->{$wpdb->prefix . 'capabilities'};
-
-                    foreach ( $wp_roles->role_names as $role => $name ) {
-                        if ( array_key_exists( $role, $capabilities ) )
-                            $user_role = $role;
-                    } */
-
                     // right aligned info
                     $title = '<span class="user-item-info">';
 
@@ -305,13 +293,11 @@ class acf_field_user extends acf_Field
         } 
 
         // load all roles by default
-        //error_log("roles 1 are " . print_r($field['roles'], true));
         if( !$field['roles'] || !is_array($field['roles']) || $field['roles'][0] == "" )
         {
             // $field['roles'] = $this->get_roles();
             $field['roles'] = array('');
         }
-        //error_log("roles 2 are " . print_r($field['roles'], true));
 
         ?>
 <div class="acf_user" data-max="<?php echo $field['max']; ?>" data-s="" data-paged="1" data-roles="<?php echo implode(',', $field['roles']); ?>" <?php if( defined('ICL_LANGUAGE_CODE') ){ echo 'data-lang="' . ICL_LANGUAGE_CODE . '"';} ?>>
@@ -381,15 +367,8 @@ class acf_field_user extends acf_Field
 
                 $title .= '</span>';
 
-                // find title. Could use get_the_title, but that uses get_post(), so I think this uses less Memory
-                // $title .= apply_filters( 'the_title', $user->user_login, $user->ID );
+                // add title. 
                 $title .= $user->first_name . ' ' . $user->last_name . ' (' . $user->user_email . ')';
-
-                // status
-                /* if($post->post_status != "publish")
-                {
-                    $title .= " ($post->post_status)";
-                } */
 
                 echo '<li>
                     <a href="' . get_permalink($user->ID) . '" class="" data-user_id="' . $user->ID . '">' . $title . '<span class="acf-button-remove"></span></a>
